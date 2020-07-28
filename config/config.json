@@ -1,0 +1,11 @@
+{
+    "server_config": {
+		"listen_addr": ":8080",
+		"log_path": "/tmp/test/bella.log",
+		"elasticsearch_endpoint": "http://elasticsearch:9200"
+	},
+	"redis_config": {
+		"host": "redis:6379",
+		"db": 1
+	}
+}

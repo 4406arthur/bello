@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+  # mongo:
+  #   image: mongo:3.2
+  #   ports:
+  #     - "27017:27017"
+  redis:
+    image: redis:alpine3.10
+    ports:
+      - "6379:6379"
+  api:
+    build:
+      context: .
+    ports:
+      - "8080:80"
+    depends_on:
+      - redis
+      # - mongo
+    volumes:
+     - type: bind
+       source: ./config
+       target: /config

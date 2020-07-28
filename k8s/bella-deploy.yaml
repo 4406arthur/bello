@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-bella
+  namespace: backend
+  labels:
+    deploy: deploy-bella
+    group: backend
+    owner: arthur
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 #升級過程中最多可以比原先設定所多出的 pod 數量
+      maxUnavailable: 1 #最多可以有幾個 pod 處在無法服務的狀態
+  minReadySeconds: 5 #容器內應用程式的啟動時間
+  selector:
+    matchLabels:
+      app: bella
+  template:
+    metadata:
+      labels:
+        app: bella #Pods的標籤給Service做selector.
+    spec:
+      containers:
+        - name: bella
+          image: arthurma/bella:alpha-0.0.1
+          resources:
+            requests:
+              cpu: 256m
+              memory: 256Mi
+            limits:
+              cpu: 512m
+              memory: 512Mi
+          volumeMounts:
+            - name: bella-config
+              mountPath: /config
+      volumes:
+        - name: bella-config
+          configMap:
+            name: bella-configmap
