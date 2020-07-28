@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/4406arthur/gin-logrus v1.0.0
 	github.com/gin-gonic/gin v1.4.0
-	github.com/google/martian v2.1.0+incompatible
 	github.com/gorilla/websocket v1.4.0
 	github.com/nats-io/nats-server/v2 v2.1.7 // indirect
 	github.com/nats-io/nats.go v1.10.0
