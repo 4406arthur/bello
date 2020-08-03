@@ -33,11 +33,11 @@ func InitRouter(log logger.Logger, config *viper.Viper) {
 		c.Status(http.StatusOK)
 	})
 
-	ncPool, err := stream.NewPool("localhost:4222", 3)
+	ncPool, err := stream.NewPool(config.GetString("kafka_config.host"), config.GetInt("kafka_config.subject_number"))
 	if err != nil {
 		log.Fatal("NA", logger.Trace(), err.Error())
 	}
-	subManager := stream.NewManager("voice", 3, log)
+	subManager := stream.NewManager("voice", config.GetInt("kafka_config.conn_number"), log)
 	streamHandler := handler.NewStreamHandler(ncPool, subManager, log)
 	r.GET("/ws", streamHandler.Flow)
 	//adminGroup := r.Group("/admin")
