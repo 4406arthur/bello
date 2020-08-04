@@ -9,7 +9,7 @@
 		"db": 1
 	},
 	"kafka_config": {
-		"host": "localhost:4222",
+		"host": "nats:4222",
 		"conn_number": 3,
 		"subject_number": 3
 	}

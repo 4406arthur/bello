@@ -146,7 +146,7 @@ func (s *StreamHandler) streamFromMailbox(ctx context.Context, mailbox *nats.Sub
 			s.logger.Info("N", logger.Trace(), "close goroutine")
 			return
 		default:
-			msg, err := mailbox.NextMsg(30 * time.Second)
+			msg, err := mailbox.NextMsg(60 * time.Second)
 			if err != nil {
 				s.logger.Error("N", logger.Trace(), err.Error())
 				if isClosed(errCh) {

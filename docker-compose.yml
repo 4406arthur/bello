@@ -1,20 +1,25 @@
 version: '3.7'
 services:
-  # mongo:
-  #   image: mongo:3.2
-  #   ports:
-  #     - "27017:27017"
-  redis:
-    image: redis:alpine3.10
+  mrcp:
+    image: arthurma/unimrcp:0.0.3-alpha
+    environment:
+      - LD_LIBRARY_PATH=/usr/local/lib/:/usr/local/unimrcp/lib 
+  nats:
+    image: nats
     ports:
-      - "6379:6379"
-  api:
+      - "4222:4222"
+  #redis:
+  #  image: redis:alpine3.10
+  #  ports:
+  #    - "6379:6379"
+  controller:
     build:
       context: .
+    command: "-c /config"
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
-      - redis
+      - nats
       # - mongo
     volumes:
      - type: bind
