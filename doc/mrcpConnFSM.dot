@@ -1,8 +1,7 @@
 digraph fsm {
     "open" -> "listen" [ label = "start" ];
-    "listen" -> "closed" [ label = "stop" ];
+    "listen" -> "open" [ label = "stop" ];
 
     "open";
     "listen";
-    "closed";
 }

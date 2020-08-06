@@ -50,7 +50,7 @@ func (s *StreamHandler) Flow(ctx *gin.Context) {
 		"open",
 		fsm.Events{
 			{Name: "start", Src: []string{"open"}, Dst: "listen"},
-			{Name: "stop", Src: []string{"listen"}, Dst: "closed"},
+			{Name: "stop", Src: []string{"listen"}, Dst: "open"},
 		},
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) {
@@ -100,12 +100,13 @@ func (s *StreamHandler) Flow(ctx *gin.Context) {
 	go s.streamFromWS(c, FSM, ws, streamIn, errChan)
 	go s.streamRelay(c, nc, streamIn, subName, uniqueReplyTo, errChan)
 	go s.streamFromMailbox(c, mailbox, streamOut, errChan)
-	//stage := 1
+
 	for {
 		select {
 		case messageFromSTT := <-streamOut:
 			s.logger.Debug("N", logger.Trace(), "get message form STT: "+string(messageFromSTT))
 			//TODO NLU logic
+			ws.WriteMessage(1, messageFromSTT)
 		case err := <-errChan:
 			s.logger.Error("N", logger.Trace(), "catch error"+err.Error())
 			return
@@ -121,11 +122,6 @@ func (s *StreamHandler) Flow(ctx *gin.Context) {
 
 func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *websocket.Conn, ch chan<- []byte, errCh chan error) {
 	action := &entity.Action{}
-	resp := &entity.Response{
-		ErrCode:     0,
-		State:       "result",
-		RecogResult: "good job",
-	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -167,11 +163,9 @@ func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *webs
 				}
 				if msgType == 2 {
 					//for testing: respond a static val
-					ws.WriteJSON(resp)
+					//ws.WriteJSON(resp)
 					ch <- msg
 				}
-			default:
-				//
 			}
 		}
 	}
