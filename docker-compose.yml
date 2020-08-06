@@ -1,13 +1,21 @@
 version: '3.7'
 services:
   mrcp:
-    image: arthurma/unimrcp:0.0.3-alpha
+    image: arthurma/unimrcp:v0.0.3-alpha
+    network_mode: "host"
     environment:
-      - LD_LIBRARY_PATH=/usr/local/lib/:/usr/local/unimrcp/lib 
+      - LD_LIBRARY_PATH=/usr/local/lib/:/usr/local/unimrcp/lib
+    depends_on:
+      - controller
   nats:
     image: nats
     ports:
       - "4222:4222"
+  stt:
+    image: arthurma/nats_consumer:v0.0.1-alpha
+    command: "-nats nats:4222 -sub voice-0"
+    depends_on:
+      - nats
   #redis:
   #  image: redis:alpine3.10
   #  ports:
@@ -15,12 +23,14 @@ services:
   controller:
     build:
       context: .
+    # image: arthurma/bella:v0.0.1-alpha
     command: "-c /config"
     ports:
       - "8080:8080"
     depends_on:
       - nats
-      # - mongo
+      - stt
+      # - redis
     volumes:
      - type: bind
        source: ./config

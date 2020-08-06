@@ -162,8 +162,6 @@ func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *webs
 					}
 				}
 				if msgType == 2 {
-					//for testing: respond a static val
-					//ws.WriteJSON(resp)
 					ch <- msg
 				}
 			}
