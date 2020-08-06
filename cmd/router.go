@@ -39,7 +39,7 @@ func InitRouter(log logger.Logger, config *viper.Viper) {
 	}
 	subManager := stream.NewManager("voice", config.GetInt("kafka_config.conn_number"), log)
 	streamHandler := handler.NewStreamHandler(ncPool, subManager, log)
-	r.GET("/ws", streamHandler.Flow)
+	r.GET("/", streamHandler.Flow)
 	//adminGroup := r.Group("/admin")
 	//Token bucket: 20 tickets withun 10 sec
 	//adminGroup.Use(throttle.Throttle(10, 20))

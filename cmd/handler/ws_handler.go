@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/4406arthur/bello/pkg/entity"
 	"github.com/4406arthur/bello/pkg/stream"
 	"github.com/4406arthur/bello/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/looplab/fsm"
 	"github.com/nats-io/nats.go"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 type StreamHandler struct {
@@ -25,6 +28,7 @@ var upGrader = websocket.Upgrader{
 	},
 }
 
+//NewStreamHandler ...
 func NewStreamHandler(p *stream.Pool, m *stream.Manager, log logger.Logger) *StreamHandler {
 	return &StreamHandler{
 		pool:    p,
@@ -33,12 +37,28 @@ func NewStreamHandler(p *stream.Pool, m *stream.Manager, log logger.Logger) *Str
 	}
 }
 
+//Flow ...
 func (s *StreamHandler) Flow(ctx *gin.Context) {
 
 	ws, err := upGrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		return
 	}
+
+	//define mrcp websocket fsm
+	FSM := fsm.NewFSM(
+		"open",
+		fsm.Events{
+			{Name: "start", Src: []string{"open"}, Dst: "listen"},
+			{Name: "stop", Src: []string{"listen"}, Dst: "closed"},
+		},
+		fsm.Callbacks{
+			"enter_state": func(e *fsm.Event) {
+				s.logger.Info("N", logger.Trace(), "enter: "+e.Dst+" from: "+e.Src)
+			},
+		},
+	)
+
 	subName, err := s.manager.Checkout()
 	if err != nil {
 		ctx.AbortWithStatus(429)
@@ -70,7 +90,14 @@ func (s *StreamHandler) Flow(ctx *gin.Context) {
 		close(errChan)
 	}()
 
-	go s.streamFromWS(c, ws, streamIn, errChan)
+	//send a listening cmd to MRCP
+	ListenAction := entity.Response{
+		ErrCode: 0,
+		State:   "listening",
+	}
+	ws.WriteJSON(ListenAction)
+
+	go s.streamFromWS(c, FSM, ws, streamIn, errChan)
 	go s.streamRelay(c, nc, streamIn, subName, uniqueReplyTo, errChan)
 	go s.streamFromMailbox(c, mailbox, streamOut, errChan)
 	//stage := 1
@@ -92,14 +119,20 @@ func (s *StreamHandler) Flow(ctx *gin.Context) {
 	}
 }
 
-func (s *StreamHandler) streamFromWS(ctx context.Context, ws *websocket.Conn, ch chan<- []byte, errCh chan error) {
+func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *websocket.Conn, ch chan<- []byte, errCh chan error) {
+	action := &entity.Action{}
+	resp := &entity.Response{
+		ErrCode:     0,
+		State:       "result",
+		RecogResult: "good job",
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			s.logger.Info("N", logger.Trace(), "close goroutine")
 			return
 		default:
-			_, message, err := ws.ReadMessage()
+			msgType, msg, err := ws.ReadMessage()
 			if err != nil {
 				s.logger.Error("N", logger.Trace(), err.Error())
 				if isClosed(errCh) {
@@ -108,8 +141,37 @@ func (s *StreamHandler) streamFromWS(ctx context.Context, ws *websocket.Conn, ch
 				errCh <- err
 				return
 			}
-			if binary.Size(message) > 0 {
-				ch <- message
+			if binary.Size(msg) == 0 {
+				break
+			}
+
+			switch FSM.Current() {
+			case "open":
+				if msgType == 1 {
+					//json decode msg
+					ffjson.Unmarshal(msg, &action)
+					s.logger.Debug("N", logger.Trace(), "ASHD:"+action.Action)
+					if action.Action == entity.ActionStart {
+						//ws.WriteMessage(1, []byte("lets rock"))
+						FSM.Event("start")
+					}
+				}
+			case "listen":
+				if msgType == 1 {
+					//json decode msg
+					ffjson.Unmarshal(msg, &action)
+					if action.Action == entity.ActionStop {
+						ws.WriteMessage(1, []byte("bye"))
+						FSM.Event("stop")
+					}
+				}
+				if msgType == 2 {
+					//for testing: respond a static val
+					ws.WriteJSON(resp)
+					ch <- msg
+				}
+			default:
+				//
 			}
 		}
 	}

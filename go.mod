@@ -6,8 +6,10 @@ require (
 	github.com/4406arthur/gin-logrus v1.0.0
 	github.com/gin-gonic/gin v1.4.0
 	github.com/gorilla/websocket v1.4.0
+	github.com/looplab/fsm v0.1.0
 	github.com/nats-io/nats-server/v2 v2.1.7 // indirect
 	github.com/nats-io/nats.go v1.10.0
+	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/viper v1.4.0
 	github.com/zsais/go-gin-prometheus v0.1.0
