@@ -123,6 +123,11 @@ func (s *StreamHandler) Flow(ctx *gin.Context) {
 
 func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *websocket.Conn, ch chan<- []byte, errCh chan error) {
 	action := &entity.Action{}
+	//listening cmd
+	ListenAction := entity.Response{
+		ErrCode: 0,
+		State:   "listening",
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -147,7 +152,7 @@ func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *webs
 				if msgType == 1 {
 					//json decode msg
 					ffjson.Unmarshal(msg, &action)
-					s.logger.Debug("N", logger.Trace(), "ASHD:"+action.Action)
+					// s.logger.Debug("N", logger.Trace(), "ASHD:"+action.Action)
 					if action.Action == entity.ActionStart {
 						//ws.WriteMessage(1, []byte("lets rock"))
 						FSM.Event("start")
@@ -158,8 +163,11 @@ func (s *StreamHandler) streamFromWS(ctx context.Context, FSM *fsm.FSM, ws *webs
 					//json decode msg
 					ffjson.Unmarshal(msg, &action)
 					if action.Action == entity.ActionStop {
-						ws.WriteMessage(1, []byte("bye"))
+						//ws.WriteMessage(1, []byte("bye"))
 						FSM.Event("stop")
+						//TODO intersting flow here, stop should be
+						//a final status
+						ws.WriteJSON(ListenAction)
 					}
 				}
 				if msgType == 2 {
