@@ -16,6 +16,7 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 )
 
+//StreamHandler ...
 type StreamHandler struct {
 	pool    *stream.Pool
 	manager *stream.Manager

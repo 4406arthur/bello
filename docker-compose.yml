@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   mrcp:
-    image: arthurma/unimrcp:v0.0.3-alpha
+    image: arthurma/unimrcp:v0.0.5-alpha
     network_mode: "host"
     environment:
       - LD_LIBRARY_PATH=/usr/local/lib/:/usr/local/unimrcp/lib
@@ -9,11 +9,23 @@ services:
       - controller
   nats:
     image: nats
+    command: "-D -m 8222"
     ports:
       - "4222:4222"
-  stt:
+      - "8222:8222"
+  stt-0:
     image: arthurma/nats_consumer:v0.0.1-alpha
     command: "-nats nats:4222 -sub voice-0"
+    depends_on:
+      - nats
+  stt-1:
+    image: arthurma/nats_consumer:v0.0.1-alpha
+    command: "-nats nats:4222 -sub voice-1"
+    depends_on:
+      - nats
+  stt-2:
+    image: arthurma/nats_consumer:v0.0.1-alpha
+    command: "-nats nats:4222 -sub voice-2"
     depends_on:
       - nats
   #redis:
@@ -29,7 +41,9 @@ services:
       - "8080:8080"
     depends_on:
       - nats
-      - stt
+      - stt-0
+      - stt-1
+      - stt-2
       # - redis
     volumes:
      - type: bind
